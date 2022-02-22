@@ -605,7 +605,7 @@ void run_precreate(phase_stat_t * s, int current_index){
               exit(1); 
           } 
           off64_t fsize = lseek64(fd, 0L, SEEK_END);
-          if (! o.ra_count >= fsize / o.ra_size) {
+          if (o.ra_count < fsize / o.ra_size) {
               printf("Error: %s is not large enough. Found %zd bytes, require at least %zu bytes", o.ra_file, fsize, o.ra_count * o.ra_size);
               exit(1);
           }
@@ -626,7 +626,10 @@ void run_precreate(phase_stat_t * s, int current_index){
           }
           printf("Creating %s. This can take a while.\n", o.ra_file);
           for (size_t i = 0; i < o.ra_count; ++i) {
-              pwrite64(fd, rabuf, o.ra_size, i*o.ra_size); 
+              ssize_t ret = pwrite64(fd, rabuf, o.ra_size, i*o.ra_size); 
+              if(ret != (ssize_t) o.ra_size){
+                printf("WARNING couldn't write\n");
+              }
           }
           free(rabuf);
           close(fd); 
@@ -948,7 +951,7 @@ void* run_benchmark_phase(void* thrd_args) {
             exit(1); 
         } 
         off64_t fsize = lseek64(fd, 0L, SEEK_END);
-        if (! o.ra_count >= fsize / o.ra_size) {
+        if (o.ra_count < fsize / o.ra_size) {
             printf("Error: %s is not large enough. Found %zd bytes, require at least %zu bytes", o.ra_file, fsize, o.ra_count * o.ra_size);
             exit(1);
         }
